@@ -1,6 +1,6 @@
-# NexusFlow - Master Implementation Plan (Enterprise Workflow Platform)
+# SutraOps - Master Implementation Plan (Enterprise Workflow Platform)
 
-NexusFlow is a production-grade, multi-tenant, rule-driven enterprise workflow automation and approval platform. This blueprint defines its clean, scalable architecture, normalized relational database design, concurrency models, testing strategies, and sequential execution roadmap.
+SutraOps is a production-grade, multi-tenant, rule-driven enterprise workflow automation and approval platform. This blueprint defines its clean, scalable architecture, normalized relational database design, concurrency models, testing strategies, and sequential execution roadmap.
 
 ---
 
