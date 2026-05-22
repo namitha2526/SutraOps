@@ -57,7 +57,7 @@ graph TD
 
 ## Permission Matrix & RBAC Design
 
-NexusFlow enforces fine-grained access control at the service and API gateway layers. The following matrix governs authorization:
+SutraOps enforces fine-grained access control at the service and API gateway layers. The following matrix governs authorization:
 
 | Role | Create Workflow | Approve Step | Manage Organization | View Analytics | Manage Templates |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -71,7 +71,7 @@ NexusFlow enforces fine-grained access control at the service and API gateway la
 ## Concurrency Control, Idempotency, & Tenant Isolation
 
 ### 1. Concurrency Control (Optimistic Locking)
-To prevent the classic double-approval problem (e.g., two managers clicking "Approve" at the exact same millisecond on a pending step), NexusFlow utilizes **Optimistic Concurrency Control (OCC)**. 
+To prevent the classic double-approval problem (e.g., two managers clicking "Approve" at the exact same millisecond on a pending step), SutraOps utilizes **Optimistic Concurrency Control (OCC)**. 
 * All major state entities (Workflows, Approvals) incorporate a `version_id` column.
 * SQLAlchemy dynamically handles this via:
   ```python
@@ -103,7 +103,7 @@ To prevent the classic double-approval problem (e.g., two managers clicking "App
 
 ## Event-Driven Architecture (EDA) & Event Failure Recovery
 
-NexusFlow uses an internal, asynchronous event loop to trigger secondary routines (notifications, email queuing, audit logging, escalation monitors).
+SutraOps uses an internal, asynchronous event loop to trigger secondary routines (notifications, email queuing, audit logging, escalation monitors).
 
 ### Event Structure:
 * Type: `Event(event_type: str, payload: dict, organization_id: UUID, correlation_id: str)`
