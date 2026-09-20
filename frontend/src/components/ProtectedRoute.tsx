@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loadUserProfile, clearSession } = useStore();
+  const { user, loadUserProfile, clearSession, connectWebSocket, ws, organizationId } = useStore();
   const token = localStorage.getItem("access_token");
 
   useEffect(() => {
@@ -15,8 +15,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       loadUserProfile().catch(() => {
         clearSession();
       });
+    } else if (token && organizationId && !ws) {
+      connectWebSocket();
     }
-  }, [token, user, loadUserProfile, clearSession]);
+  }, [token, user, organizationId, ws, loadUserProfile, clearSession, connectWebSocket]);
 
   if (!token) {
     return <Navigate to="/login" replace />;

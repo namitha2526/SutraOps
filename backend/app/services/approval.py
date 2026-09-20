@@ -19,7 +19,7 @@ class ApprovalService:
     """
     
     @staticmethod
-    def action_approval(
+    async def action_approval(
         db: Session,
         user: User,
         approval_id: UUID,
@@ -85,11 +85,11 @@ class ApprovalService:
                 "amount": 15000,  # Default fallback context mock
                 "department_code": user.department.code if user.department else "GEN"
             }
-            WorkflowService.evaluate_next_step(db, workflow, context_data)
+            await WorkflowService.evaluate_next_step(db, workflow, context_data)
         elif status == "Rejected":
             StructuredLogger.info(f"Step '{step.name}' rejected by {user.email}. Terminating process.")
             # Wipes subsequent pipelines, marking workflow Rejected
-            WorkflowService._finalize_workflow(db, workflow, "Rejected")
+            await WorkflowService._finalize_workflow(db, workflow, "Rejected")
 
         try:
             db.commit()

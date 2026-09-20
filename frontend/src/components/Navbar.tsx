@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "../store/useStore";
-import { Bell, Shield, ChevronDown, CheckCircle2 } from "lucide-react";
+import { Bell, Shield, CheckCircle2 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { user, notifications, fetchNotifications } = useStore();

@@ -28,7 +28,7 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def get_current_user(
+async def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ) -> User:
@@ -54,7 +54,15 @@ def get_current_user(
         )
 
     # Fetch User
-    user = db.query(User).filter(User.id == user_id).first()
+    import uuid
+    try:
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials: claim fields malformed"
+        )
+    user = db.query(User).filter(User.id == user_uuid).first()
     if not user:
         raise ResourceNotFound("User profile not found")
         

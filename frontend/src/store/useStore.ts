@@ -70,11 +70,13 @@ interface AppStore {
   notifications: NotificationInstance[];
   analytics: any | null;
   isLoading: boolean;
+  ws: WebSocket | null;
   
   // Setters & Authentications
   setSession: (accessToken: string, refreshToken: string, orgId: string) => void;
   clearSession: () => void;
   loadUserProfile: () => Promise<void>;
+  connectWebSocket: () => void;
   
   // Queries
   fetchWorkflows: () => Promise<void>;
@@ -97,19 +99,36 @@ export const useStore = create<AppStore>((set, get) => ({
   notifications: [],
   analytics: null,
   isLoading: false,
+  ws: null,
 
   setSession: (accessToken: string, refreshToken: string, orgId: string) => {
     localStorage.setItem("access_token", accessToken);
     localStorage.setItem("refresh_token", refreshToken);
     localStorage.setItem("organization_id", orgId);
     set({ organizationId: orgId });
+    if (orgId) {
+      get().connectWebSocket();
+    }
   },
 
   clearSession: () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("organization_id");
-    set({ user: null, organizationId: null, workflows: [], pendingApprovals: [], tasks: [], notifications: [], analytics: null });
+    const socket = get().ws;
+    if (socket) {
+      socket.close();
+    }
+    set({ 
+      user: null, 
+      organizationId: null, 
+      workflows: [], 
+      pendingApprovals: [], 
+      tasks: [], 
+      notifications: [], 
+      analytics: null,
+      ws: null 
+    });
   },
 
   loadUserProfile: async () => {
@@ -117,9 +136,49 @@ export const useStore = create<AppStore>((set, get) => ({
       const response = await api.get("/auth/me");
       set({ user: response.data, organizationId: response.data.organization_id });
       localStorage.setItem("organization_id", response.data.organization_id);
+      get().connectWebSocket();
     } catch (error) {
       get().clearSession();
     }
+  },
+
+  connectWebSocket: () => {
+    const orgId = get().organizationId;
+    if (!orgId) return;
+
+    const existingWs = get().ws;
+    if (existingWs) {
+      try {
+        existingWs.close();
+      } catch (e) {}
+    }
+
+    const wsUrl = `ws://localhost:8000/ws/${orgId}`;
+    const socket = new WebSocket(wsUrl);
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("WebSocket event received:", data);
+        get().fetchWorkflows();
+        get().fetchApprovals();
+        get().fetchTasks();
+        get().fetchNotifications();
+        get().fetchAnalytics();
+      } catch (e) {
+        console.error("Failed handling websocket signal:", e);
+      }
+    };
+
+    socket.onclose = () => {
+      setTimeout(() => {
+        if (get().organizationId === orgId) {
+          get().connectWebSocket();
+        }
+      }, 5000);
+    };
+
+    set({ ws: socket });
   },
 
   fetchWorkflows: async () => {

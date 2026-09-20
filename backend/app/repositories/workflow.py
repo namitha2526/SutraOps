@@ -13,9 +13,14 @@ class WorkflowTemplateRepository(BaseRepository[WorkflowTemplate]):
         """
         tenant_id = self._get_tenant_id()
         if tenant_id:
+            import uuid
+            try:
+                tenant_uuid = uuid.UUID(tenant_id) if isinstance(tenant_id, str) else tenant_id
+            except ValueError:
+                tenant_uuid = tenant_id
             # Matches public OR specific tenant templates
             return db.query(self.model).filter(
-                (self.model.organization_id == tenant_id) | (self.model.organization_id.is_(None))
+                (self.model.organization_id == tenant_uuid) | (self.model.organization_id.is_(None))
             ).filter(self.model.is_active.is_(True)).all()
             
         return db.query(self.model).filter(self.model.organization_id.is_(None)).filter(self.model.is_active.is_(True)).all()

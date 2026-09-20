@@ -91,7 +91,15 @@ def refresh_token(
         )
 
     # Fetch User to confirm account is active
-    user = db.query(User).filter(User.id == user_id).first()
+    import uuid
+    try:
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+    except ValueError:
+        raise NexusFlowException(
+            message="Invalid user ID format in claims",
+            status_code=status.HTTP_401_UNAUTHORIZED
+        )
+    user = db.query(User).filter(User.id == user_uuid).first()
     if not user or not user.is_active:
         raise NexusFlowException(
             message="Account is deactivated or not found",

@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     )
 
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "NexusFlow Enterprise API"
+    PROJECT_NAME: str = "SutraOps Enterprise API"
 
     # CORS configuration
     BACKEND_CORS_ORIGINS: Annotated[

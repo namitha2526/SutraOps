@@ -29,13 +29,13 @@ router = APIRouter(prefix="/approvals", tags=["Approvals & Kanban Tasks"])
     summary="Sign off Step Approval",
     description="Signs off on a step (Approve/Reject), executing cascading rules evaluations and concurrency locks."
 )
-def action_step(
+async def action_step(
     approval_id: UUID,
     req: ApprovalAction,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    return ApprovalService.action_approval(
+    return await ApprovalService.action_approval(
         db, current_user, approval_id, req.status, req.comments
     )
 

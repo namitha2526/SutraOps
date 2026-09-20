@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Response
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
@@ -21,13 +21,13 @@ router = APIRouter(prefix="/workflows", tags=["Workflows Orchestrator"])
     summary="Create dynamic Workflow instance",
     description="Registers a new workflow in Draft state. You can specify a template_id or manually pass steps configuration."
 )
-def create_workflow(
+async def create_workflow(
     req: WorkflowCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
     # Inject current user as initiator
-    return WorkflowService.create_workflow(db, current_user, req)
+    return await WorkflowService.create_workflow(db, current_user, req)
 
 
 @router.post(
@@ -36,13 +36,13 @@ def create_workflow(
     summary="Initiate Draft Workflow processing",
     description="Starts step executions, evaluating the dynamic Rules Engine predicates recursively."
 )
-def start_workflow(
+async def start_workflow(
     workflow_id: UUID,
     context_data: Dict[str, Any],
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    return WorkflowService.start_processing(db, workflow_id, context_data)
+    return await WorkflowService.start_processing(db, workflow_id, context_data)
 
 
 @router.get(
@@ -78,6 +78,7 @@ def get_workflow(
 @router.delete(
     "/{workflow_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
     summary="Delete Workflow instance",
     description="Deletes the workflow. Standard CASCADE delete rules will wipe associated approvals and tasks."
 )
@@ -85,6 +86,6 @@ def delete_workflow(
     workflow_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
-) -> Any:
+):
     workflow_repo.remove(db, id=workflow_id)
-    return
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

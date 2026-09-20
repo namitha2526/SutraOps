@@ -8,6 +8,7 @@ from app.core.deps import get_db, get_current_user, PermissionChecker
 from app.models.approval import Approval
 from app.models.user import User
 from app.models.workflow import Workflow
+from app.core.caching import RedisCache
 
 router = APIRouter(prefix="/analytics", tags=["Performance Telemetry & Analytics"])
 
@@ -22,6 +23,11 @@ def fetch_analytics(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
+    cache_key = f"analytics:{current_user.organization_id}"
+    cached_metrics = RedisCache.get(cache_key)
+    if cached_metrics is not None:
+        return cached_metrics
+
     # 1. Total Workflow status tallies scoped strictly to tenant
     workflows_query = db.query(Workflow).filter(Workflow.organization_id == current_user.organization_id)
     
@@ -86,7 +92,7 @@ def fetch_analytics(
         {"department": "IT", "volume": max(1, rejected_count + escalated_count), "efficiency": 90.0},
     ]
 
-    return {
+    res_data = {
         "summary": {
             "total_workflows": total_count,
             "approved": approved_count,
@@ -103,3 +109,5 @@ def fetch_analytics(
         },
         "department_metrics": dept_distributions
     }
+    RedisCache.set(cache_key, res_data, expire_seconds=300)
+    return res_data

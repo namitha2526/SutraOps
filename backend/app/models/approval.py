@@ -30,6 +30,13 @@ class Approval(TimeStampedUUIDModel):
     sla_deadline = Column(DateTime, nullable=True)
     actioned_at = Column(DateTime, nullable=True)
 
+    # Optimistic Concurrency Control
+    version_id = Column(Integer, nullable=False, default=1)
+
+    __mapper_args__ = {
+        "version_id_col": version_id
+    }
+
     # Relationships
     workflow = relationship("Workflow", back_populates="approvals")
     step = relationship("WorkflowStep", back_populates="approvals")

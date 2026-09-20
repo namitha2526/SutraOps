@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core import config
@@ -7,10 +7,12 @@ from app.core.config import settings
 from app.core.event_handlers import register_all_listeners
 from app.core.logging import CorrelationIdMiddleware
 from app.middleware.tenant import TenantIsolationMiddleware
+from app.middleware.idempotency import IdempotencyMiddleware
 from app.middleware.error_handler import CentralizedErrorHandlerMiddleware
 
 # Routers
 from app.routers import auth, templates, workflows, approvals, analytics, admin
+from app.core.websocket_manager import ws_manager
 
 
 @asynccontextmanager
@@ -24,7 +26,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    description="NexusFlow is a multi-tenant, rules-driven enterprise workflow automation and approval platform.",
+    description="SutraOps is a multi-tenant, rules-driven enterprise workflow automation and approval platform.",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -32,6 +34,7 @@ app = FastAPI(
 # 1. Mount Observability middlewares in sequence
 app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(TenantIsolationMiddleware)
+app.add_middleware(IdempotencyMiddleware)
 app.add_middleware(CentralizedErrorHandlerMiddleware)
 
 # 2. Mount standard CORS Middleware
@@ -70,3 +73,15 @@ def health_check():
             "analytics_enabled": settings.ENABLE_ANALYTICS
         }
     }
+
+
+@app.websocket("/ws/{organization_id}")
+async def websocket_endpoint(websocket: WebSocket, organization_id: str):
+    await ws_manager.connect(websocket, organization_id)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, organization_id)
+    except Exception:
+        ws_manager.disconnect(websocket, organization_id)

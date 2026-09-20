@@ -91,7 +91,7 @@ export const Login: React.FC = () => {
           <div className="inline-flex p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 mb-4 animate-pulse-subtle">
             <Shield className="w-8 h-8 text-indigo-400" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">NexusFlow</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">SutraOps</h1>
           <p className="text-sm text-slate-400 mt-1">Enterprise Automation Portal Gateway</p>
         </div>
 

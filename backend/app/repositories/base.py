@@ -25,8 +25,14 @@ class BaseRepository(Generic[ModelType]):
         Inspects model fields, dynamically appending organization isolation constraints.
         """
         tenant_id = self._get_tenant_id()
+        print(f"DEBUG: Model={self.model.__name__}, tenant_id={tenant_id}, type={type(tenant_id)}")
         if hasattr(self.model, "organization_id") and tenant_id:
-            return query.filter(self.model.organization_id == tenant_id)
+            import uuid
+            try:
+                tenant_uuid = uuid.UUID(tenant_id) if isinstance(tenant_id, str) else tenant_id
+                return query.filter(self.model.organization_id == tenant_uuid)
+            except ValueError:
+                return query.filter(self.model.organization_id == tenant_id)
         return query
 
     def get(self, db: Session, id: Any) -> Optional[ModelType]:
@@ -45,7 +51,11 @@ class BaseRepository(Generic[ModelType]):
         # Check if model has organization_id and populate it automatically if missing in payload
         tenant_id = self._get_tenant_id()
         if hasattr(self.model, "organization_id") and "organization_id" not in obj_in and tenant_id:
-            obj_in["organization_id"] = tenant_id
+            import uuid
+            try:
+                obj_in["organization_id"] = uuid.UUID(tenant_id) if isinstance(tenant_id, str) else tenant_id
+            except ValueError:
+                obj_in["organization_id"] = tenant_id
 
         db_obj = self.model(**obj_in)
         db.add(db_obj)

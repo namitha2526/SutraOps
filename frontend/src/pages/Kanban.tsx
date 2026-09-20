@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useStore } from "../store/useStore";
 import { 
-  CheckSquare, 
   ArrowRight, 
   UserCheck, 
   Check, 
   X,
-  MessageSquare,
-  AlertCircle
+  MessageSquare
 } from "lucide-react";
 
 export const Kanban: React.FC = () => {
@@ -17,8 +15,7 @@ export const Kanban: React.FC = () => {
     updateTaskStatus,
     pendingApprovals,
     fetchApprovals,
-    actionStepApproval,
-    user
+    actionStepApproval
   } = useStore();
 
   const [decisionComments, setDecisionComments] = useState<{ [key: string]: string }>({});

@@ -8,7 +8,6 @@ import {
   CheckCircle, 
   Clock, 
   XCircle, 
-  FileText, 
   Send, 
   Paperclip,
   Check, 
@@ -20,8 +19,7 @@ import {
 export const Dashboard: React.FC = () => {
   const { 
     workflows, 
-    fetchWorkflows, 
-    user 
+    fetchWorkflows 
   } = useStore();
 
   const [selectedWorkflow, setSelectedWorkflow] = useState<any | null>(null);
@@ -39,7 +37,6 @@ export const Dashboard: React.FC = () => {
   // Comments and attachments side-panel states
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
 
   useEffect(() => {
     fetchWorkflows();
@@ -57,7 +54,6 @@ export const Dashboard: React.FC = () => {
   const handleSelectWorkflow = async (wf: any) => {
     setSelectedWorkflow(wf);
     setComments([]);
-    setFileToUpload(null);
 
     try {
       const res = await api.get(`/approvals/${wf.id}/comments`);
@@ -278,7 +274,7 @@ export const Dashboard: React.FC = () => {
                 </span>
                 
                 <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
-                  {selectedWorkflow.steps?.map((step: any, idx: number) => {
+                  {selectedWorkflow.steps?.map((step: any) => {
                     const isStepApproved = step.approvals?.some((a: any) => a.status === "Approved");
                     const isStepPending = step.id === selectedWorkflow.current_step_id;
                     const isSkipped = step.approvals?.some((a: any) => a.comments?.includes("Bypassed"));
@@ -510,7 +506,7 @@ export const Dashboard: React.FC = () => {
                 <div className="mt-4 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-start space-x-2 text-[10px] text-slate-400 leading-relaxed">
                   <AlertTriangle className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
                   <span>
-                    NexusFlow will process these context fields against defined templates conditions in real-time to auto-approve, skip, or route steps.
+                    SutraOps will process these context fields against defined templates conditions in real-time to auto-approve, skip, or route steps.
                   </span>
                 </div>
               </div>

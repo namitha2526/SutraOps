@@ -8,6 +8,7 @@ from app.models.system import Notification, AuditLog
 from app.models.user import User
 from app.models.workflow import Workflow
 from app.services.workflow import WorkflowService
+from app.core.websocket_manager import ws_manager
 
 
 # =====================================================================
@@ -25,6 +26,12 @@ async def handle_workflow_created(event: Event):
         return
         
     StructuredLogger.info(f"Event handler: initiating processing for workflow {workflow_id_str}")
+    
+    # Broadcast change
+    await ws_manager.broadcast_to_tenant(
+        event.organization_id, 
+        {"event": "workflow.created", "workflow_id": workflow_id_str}
+    )
     
     db = SessionLocal()
     try:
@@ -108,6 +115,12 @@ async def handle_task_assigned(event: Event):
         StructuredLogger.info(
             f"Task and notifications generated for step approval {approval_id_str}. Alerts sent to {len(target_users)} users."
         )
+        
+        # Broadcast change
+        await ws_manager.broadcast_to_tenant(
+            event.organization_id, 
+            {"event": "task.assigned", "approval_id": approval_id_str, "workflow_id": workflow_id_str}
+        )
     except Exception as e:
         db.rollback()
         StructuredLogger.error(f"Error executing handle_task_assigned: {str(e)}")
@@ -159,6 +172,12 @@ async def handle_workflow_concluded(event: Event):
 
         db.commit()
         StructuredLogger.info(f"Concluded audit log and creator alert successfully logged for {workflow_id_str}")
+        
+        # Broadcast change
+        await ws_manager.broadcast_to_tenant(
+            event.organization_id, 
+            {"event": f"workflow.{status.lower()}", "workflow_id": workflow_id_str, "status": status}
+        )
     except Exception as e:
         db.rollback()
         StructuredLogger.error(f"Error executing handle_workflow_concluded: {str(e)}")

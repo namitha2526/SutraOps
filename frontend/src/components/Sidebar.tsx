@@ -40,7 +40,7 @@ export const Sidebar: React.FC = () => {
           </div>
           <div>
             <span className="font-bold text-lg tracking-wider bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-              NexusFlow
+              SutraOps
             </span>
             <span className="block text-[10px] text-indigo-400 uppercase tracking-widest font-bold">
               Enterprise

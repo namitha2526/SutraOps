@@ -22,7 +22,7 @@ class WorkflowService:
     """
     
     @staticmethod
-    def create_workflow(db: Session, creator: User, req: WorkflowCreate) -> Workflow:
+    async def create_workflow(db: Session, creator: User, req: WorkflowCreate) -> Workflow:
         StructuredLogger.info(
             f"Initializing workflow request: '{req.title}' (Creator: {creator.email})"
         )
@@ -100,18 +100,15 @@ class WorkflowService:
             },
             organization_id=workflow_obj.organization_id
         )
-        asyncio_loop = None
         try:
-            import asyncio
-            asyncio.create_task(EventBus.publish(event))
-        except RuntimeError:
-            # Gracefully handle running events outside event loop threads (like initial test seeds)
-            pass
+            await EventBus.publish(event)
+        except Exception as e:
+            StructuredLogger.error(f"Failed to publish workflow.created event: {str(e)}")
 
         return workflow_obj
 
     @classmethod
-    def start_processing(cls, db: Session, workflow_id: UUID, context_data: Dict[str, Any]) -> Workflow:
+    async def start_processing(cls, db: Session, workflow_id: UUID, context_data: Dict[str, Any]) -> Workflow:
         """
         Transitions a Draft workflow into processing, evaluating dynamic steps sequentially.
         """
@@ -126,11 +123,11 @@ class WorkflowService:
         db.add(workflow)
         db.flush()
 
-        cls.evaluate_next_step(db, workflow, context_data)
+        await cls.evaluate_next_step(db, workflow, context_data)
         return workflow
 
     @classmethod
-    def evaluate_next_step(
+    async def evaluate_next_step(
         cls,
         db: Session,
         workflow: Workflow,
@@ -142,7 +139,7 @@ class WorkflowService:
         steps = step_repo.get_steps_for_workflow(db, workflow.id)
         if not steps:
             # Empty steps pipeline - auto-approve complete workflow
-            cls._finalize_workflow(db, workflow, "Approved")
+            await cls._finalize_workflow(db, workflow, "Approved")
             return
 
         # Find first step that is not yet completed or actioned
@@ -160,7 +157,7 @@ class WorkflowService:
 
         if not target_step:
             # All steps completed successfully! Finalize process
-            cls._finalize_workflow(db, workflow, "Approved")
+            await cls._finalize_workflow(db, workflow, "Approved")
             return
 
         # 2. Check if this step has dynamic conditions
@@ -187,7 +184,7 @@ class WorkflowService:
                 db.add(skip_approval)
                 db.commit()
                 # Recursively evaluate the subsequent step
-                cls.evaluate_next_step(db, workflow, context_data)
+                await cls.evaluate_next_step(db, workflow, context_data)
                 return
 
             elif action == "AUTO_APPROVE":
@@ -203,7 +200,7 @@ class WorkflowService:
                 db.add(auto_approval)
                 db.commit()
                 # Recursively evaluate subsequent step
-                cls.evaluate_next_step(db, workflow, context_data)
+                await cls.evaluate_next_step(db, workflow, context_data)
                 return
 
             elif action == "ROUTE_TO_ROLE":
@@ -264,13 +261,12 @@ class WorkflowService:
             organization_id=workflow.organization_id
         )
         try:
-            import asyncio
-            asyncio.create_task(EventBus.publish(event))
-        except RuntimeError:
-            pass
+            await EventBus.publish(event)
+        except Exception as e:
+            StructuredLogger.error(f"Failed to publish task.assigned event: {str(e)}")
 
-    @staticmethod
-    def _finalize_workflow(db: Session, workflow: Workflow, final_status: str):
+    @classmethod
+    async def _finalize_workflow(db: Session, workflow: Workflow, final_status: str):
         """
         Concludes workflow execution, setting final outcomes (Approved / Rejected).
         """
@@ -295,7 +291,6 @@ class WorkflowService:
             organization_id=workflow.organization_id
         )
         try:
-            import asyncio
-            asyncio.create_task(EventBus.publish(event))
-        except RuntimeError:
-            pass
+            await EventBus.publish(event)
+        except Exception as e:
+            StructuredLogger.error(f"Failed to publish workflow finalized event: {str(e)}")

@@ -94,10 +94,6 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         # Bind token
         token_cid = correlation_id_ctx.set(correlation_id)
         
-        # Capture optional organization ID from header for soft multi-tenancy
-        org_id = request.headers.get("X-Organization-ID", "")
-        token_oid = organization_id_ctx.set(org_id)
-
         start_time = time.time()
         StructuredLogger.info(
             f"Request Started: {request.method} {request.url.path}",
@@ -128,4 +124,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         finally:
             # Clear context vars
             correlation_id_ctx.reset(token_cid)
-            organization_id_ctx.reset(token_oid)

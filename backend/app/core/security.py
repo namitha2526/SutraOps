@@ -11,11 +11,12 @@ ALGORITHM = "HS256"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verifies a plain text password matches its stored bcrypt hash.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
+    print("DEBUG password type:", type(plain_password))
+    print("DEBUG password length:", len(plain_password))
+    print("DEBUG password bytes:", len(plain_password.encode("utf-8")))
+    print("DEBUG hash length:", len(hashed_password))
 
+    return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
     """
